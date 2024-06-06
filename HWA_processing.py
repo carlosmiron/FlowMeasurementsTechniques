@@ -50,7 +50,7 @@ polyfit_coefficients = np.polyfit(voltages, velocities, 4)
 
 
 #Plot the calibration data (with voltages on the y axis, but we can also place them on the x axis)
-calibration_plot = True
+calibration_plot = False
 if calibration_plot:
     voltages_plot = np.linspace(min(voltages), max(voltages), 100)
 
@@ -139,7 +139,7 @@ T_sample = 2 * T1 * std_Cor**2 * (k / (mu_Cor * epsilon))**2
 f_sample = 1 / (2 * T1)
 
 # Plotting for sample time
-sample_time_plot = True
+sample_time_plot = False
 if sample_time_plot:
     print('Minimum sample frequency: ', f_sample, 'Hz')
     print('Sample Time: ', T_sample, 's')
@@ -190,46 +190,69 @@ if fluc_velocity_plot:
 #Compute the fourier tranform of a sine wave using scipy
 from scipy.fft import rfft, rfftfreq
 
-#Create a sine wave
-fs = 1000       #Sampling rate. #Average number of samples obtained in one second. Inverse of sampling period
-f = 10
-t = np.linspace(0, 1, fs)
-sine_wave = np.sin(2*np.pi*f*t)
-
-#Compute the fourier transform
-sine_wave_fft = rfft(sine_wave)
-freqs = rfftfreq(len(sine_wave), 1/fs)
-
-#Plot the fourier transform
-sine_wave_plot = True
-if sine_wave_plot:
-    fig = plt.figure()
-    plt.plot(freqs, np.abs(sine_wave_fft))
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel('Amplitude')
-    plt.title('Fourier Transform of a Sine Wave')
-    plt.show()
+def fourier(signal, Ts):
+    #Compute the fourier transform
+    signal_fft = rfft(signal)
+    freqs = rfftfreq(len(signal), Ts)
+    return signal_fft, freqs
 
 
-
-"""	
-#Print a random df
-voltage_example = txt_to_df('HWA/Mesruements_00_+40.txt')
-print(voltage_example)
+#Use one velocity signal as an example
+voltage_example = txt_to_df('HWA/Mesruements_15_+24.txt')
 velocities_example = voltage_to_velocity(polyfit_coefficients, voltage_example['Voltage'].astype(float))
-print(velocities_example)
-
 #Remove nans from the array
 velocities_example = velocities_example[~np.isnan(velocities_example)]
-print(velocities_example)
+#Remove average velocity
+fluctuations_example = velocities_example - np.mean(velocities_example)
 
 #Plot the velocity signal
-
 fig = plt.figure()
 plt.plot(velocities_example)
-plt.xlabel('Time')
 plt.ylabel('Velocity')
 plt.title('Velocity Signal')
 plt.show()
+
+#Compute the fourier transform of the velocity signal
+fluctuations_example_fft, freqs = fourier(fluctuations_example, T_sample)
+
+
+#Plot the fourier transform
+fig = plt.figure()
+plt.plot(freqs, np.abs(fluctuations_example_fft))
+plt.xlabel('Frequency [Hz]')
+plt.ylabel('Amplitude')
+plt.title('Fourier Transform of the fluctuations Signal')
+plt.show()
+
+
 """
+#TESTING THE FOURIER TRANSFORM FUNCTION
+#Determine the fourier transform of a simple sine wave
+#Generate a sine wave
+fs = 1000
+t = np.linspace(0, 1, fs)
+f1 = 10
+f2 = 200
+f3 = 500
+sine_wave = np.sin(2 * np.pi * f1 * t) + np.sin(2 * np.pi * f2 * t) + np.sin(2 * np.pi * f3 * t)
+#Compute the fourier transform
+sine_wave_fft, freqs = fourier(sine_wave, 1/fs)
+
+#Plot the sine wave
+fig = plt.figure()
+plt.plot(t, sine_wave)
+plt.ylabel('Amplitude')
+plt.title('Sine Wave')
+plt.show()
+
+#Plot the fourier transform of the sine wave
+fig = plt.figure()
+plt.plot(freqs, np.abs(sine_wave_fft))
+plt.xlabel('Frequency [Hz]')
+plt.ylabel('Amplitude')
+plt.title('Fourier Transform of the Sine Wave')
+plt.show()
+"""
+
+
 
