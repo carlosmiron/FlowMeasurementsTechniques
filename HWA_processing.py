@@ -97,8 +97,7 @@ for angle in angles:
         velocities_array = np.polyval(polyfit_coefficients, voltages_array)
         fluctuations_array = velocities_array - mean_vel
         fluctuations_squared_array = fluctuations_array**2
-        fluc_sqrd_mean = np.mean(fluctuations_squared_array)
-        fluc_sqrd_mean = np.sqrt(fluc_sqrd_mean)
+        fluc_sqrd_mean = np.std(velocities_array, ddof=1)
 
 
         if angle == "00":
@@ -110,11 +109,53 @@ for angle in angles:
         elif angle == "15":
             mean_velocities_15[positions.index(position)] = mean_vel
             fluc_velocities_15[positions.index(position)] = fluc_sqrd_mean
-        
+
+#sampling time and turbulence intensity from correlation file
+Cor_data = np.genfromtxt('HWA/CorrelationTest.txt', delimiter='\t', skip_header=23, names=['Time', 'Voltage'], dtype=None, encoding=None)
+Cor_time = Cor_data['Time']
+Cor_voltage = Cor_data['Voltage']
+Cor_velocity = np.polyval(polyfit_coefficients, Cor_voltage)
+# Mean and standard deviation
+mu_Cor = np.mean(Cor_velocity)
+std_Cor = np.std(Cor_velocity, ddof=1)
+u_Cor = Cor_velocity - mu_Cor
+
+# Turbulence intensity
+Tu = std_Cor / mu_Cor
+
+#uncertainty less than 1% with confidence level 99.7%
+epsilon = 0.01
+k = 3
+
+# Calculate autocorrelation rho(tau)
+full_corr = np.correlate(u_Cor, u_Cor, mode='full') / np.mean((u_Cor)**2 * len(u_Cor))
+rho_tau = full_corr[len(u_Cor) - 1:]
+#find first zero point in rho(tau)
+sign_changes = np.diff(np.sign(rho_tau))
+zero_crossings = np.where(sign_changes)[0]  # indices where the sign change occurs
+T1 = Cor_time[zero_crossings[0]] + rho_tau[zero_crossings[0]] / abs(rho_tau[zero_crossings[0]+1] - rho_tau[zero_crossings[0]]) * abs(Cor_time[zero_crossings[0]+1] - Cor_time[zero_crossings[0]])
+T_sample = 2 * T1 * std_Cor**2 * (k / (mu_Cor * epsilon))**2
+f_sample = 1 / (2 * T1)
+
+# Plotting for sample time
+sample_time_plot = True
+if sample_time_plot:
+    print('Minimum sample frequency: ', f_sample, 'Hz')
+    print('Sample Time: ', T_sample, 's')
+    plt.figure(figsize=(10, 5))
+    plt.plot(Cor_time*1000, rho_tau, label='Normalized Autocorrelation')
+    plt.axhline(0, color='red', linestyle='--', label='Zero Crossing')
+    plt.title('Normalized Autocorrelation Function of Velocity Fluctuations')
+    plt.xlabel('time [ms]')
+    plt.ylabel(r'$\rho$')
+    plt.xlim([0, 100])
+    plt.legend()
+    plt.show()
+
 
 
 #Plot the mean velocities
-mean_velocity_plot = True
+mean_velocity_plot = False
 if mean_velocity_plot:
     fig = plt.figure()
     
@@ -130,7 +171,7 @@ if mean_velocity_plot:
 
 
 #Plot the fluctuations
-fluc_velocity_plot = True
+fluc_velocity_plot = False
 if fluc_velocity_plot:
     fig = plt.figure()
     
