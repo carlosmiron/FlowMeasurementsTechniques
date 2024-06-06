@@ -26,7 +26,8 @@ def avg_voltage(df):
     avg_voltage = df['Voltage'].astype(float).mean()
     return avg_voltage
 
-
+def voltage_to_velocity(coefficients, voltage):
+    return np.polyval(coefficients, voltage)
 
 
 ############################################## Calibration #################################################
@@ -49,7 +50,7 @@ polyfit_coefficients = np.polyfit(voltages, velocities, 4)
 
 
 #Plot the calibration data (with voltages on the y axis, but we can also place them on the x axis)
-calibration_plot = False
+calibration_plot = True
 if calibration_plot:
     voltages_plot = np.linspace(min(voltages), max(voltages), 100)
 
@@ -114,7 +115,7 @@ for angle in angles:
 
 
 #Plot the mean velocities
-mean_velocity_plot = True
+mean_velocity_plot = False
 if mean_velocity_plot:
     fig = plt.figure()
     
@@ -130,7 +131,7 @@ if mean_velocity_plot:
 
 
 #Plot the fluctuations
-fluc_velocity_plot = True
+fluc_velocity_plot = False
 if fluc_velocity_plot:
     fig = plt.figure()
     
@@ -143,6 +144,51 @@ if fluc_velocity_plot:
     plt.title('Fluctuation vs Position')
     plt.show()
 
+############################################## Spectral Analysis #################################################
+
+#Compute the fourier tranform of a sine wave using scipy
+from scipy.fft import rfft, rfftfreq
+
+#Create a sine wave
+fs = 1000       #Sampling rate. #Average number of samples obtained in one second. Inverse of sampling period
+f = 10
+t = np.linspace(0, 1, fs)
+sine_wave = np.sin(2*np.pi*f*t)
+
+#Compute the fourier transform
+sine_wave_fft = rfft(sine_wave)
+freqs = rfftfreq(len(sine_wave), 1/fs)
+
+#Plot the fourier transform
+sine_wave_plot = True
+if sine_wave_plot:
+    fig = plt.figure()
+    plt.plot(freqs, np.abs(sine_wave_fft))
+    plt.xlabel('Frequency [Hz]')
+    plt.ylabel('Amplitude')
+    plt.title('Fourier Transform of a Sine Wave')
+    plt.show()
 
 
+
+"""	
+#Print a random df
+voltage_example = txt_to_df('HWA/Mesruements_00_+40.txt')
+print(voltage_example)
+velocities_example = voltage_to_velocity(polyfit_coefficients, voltage_example['Voltage'].astype(float))
+print(velocities_example)
+
+#Remove nans from the array
+velocities_example = velocities_example[~np.isnan(velocities_example)]
+print(velocities_example)
+
+#Plot the velocity signal
+
+fig = plt.figure()
+plt.plot(velocities_example)
+plt.xlabel('Time')
+plt.ylabel('Velocity')
+plt.title('Velocity Signal')
+plt.show()
+"""
 
