@@ -277,28 +277,76 @@ if fourier_plot_00:
 
 fourier_plot_05 = False
 if fourier_plot_05:     
-    fig = plt.figure()
-    #Plot the fourier transform of angle is 0 and every four positions
-    for i in range(0, len(positions), 4):
-        plt.plot(freqs_dict["05"][positions[i]][0], fft_dict["05"][positions[i]][0], label = positions[i])
+    # Create a figure and a set of subplots
+    fig, axs = plt.subplots(3, 2, figsize=(15, 10))  # figsize can be adjusted based on your display preferences
 
-    plt.legend()
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel('Amplitude')
-    plt.title('Fourier Transform of the Fluctuations Signal')
+    # Flatten the axs array for easier indexing
+    axs = axs.flatten()
+
+    # Track subplot index
+    index = 0
+
+    # Iterate through your positions, plotting every fourth position as specified
+    for i in range(0, len(positions), 4):
+        # Select the next subplot
+        ax = axs[index]
+
+        # Plot the Fourier transform for this position
+        ax.loglog(freqs_dict["05"][positions[i]][0], fft_dict["05"][positions[i]][0], label=positions[i])
+
+        # Set titles, labels, etc.
+        ax.set_title(f'Fourier Transform at {positions[i]}')
+        ax.set_xlabel('Frequency [Hz]')
+        ax.set_ylabel('Amplitude')
+        ax.legend()
+
+        # Increment the subplot index
+        index += 1
+
+        # Break if all subplots are filled
+        if index >= 6:
+            break
+
+    # Adjust layout to prevent overlap
+    plt.tight_layout()
     plt.show()
     
 
 fourier_plot_15 = False
-if fourier_plot_15:     
-    fig = plt.figure()
-    #Plot the fourier transform of angle is 0 and every four positions
-    for i in range(0, len(positions), 4):
-        plt.plot(freqs_dict["15"][positions[i]][0], fft_dict["15"][positions[i]][0], label = positions[i])
+if fourier_plot_15: 
+    # Create a figure and a set of subplots
+    fig, axs = plt.subplots(3, 2, figsize=(15, 10))  # figsize can be adjusted based on your display preferences
 
-    plt.legend()
-    plt.xlabel('Frequency [Hz]')
-    plt.ylabel('Amplitude')
-    plt.title('Fourier Transform of the Fluctuations Signal')
+    # Flatten the axs array for easier indexing
+    axs = axs.flatten()
+
+    # Track subplot index
+    index = 0
+
+    # Iterate through your positions, plotting every fourth position as specified
+    for i in range(0, len(positions), 4):
+        # Select the next subplot
+        ax = axs[index]
+
+        # Plot the Fourier transform for this position
+        ax.loglog(freqs_dict["15"][positions[i]][0], fft_dict["15"][positions[i]][0], label=positions[i])
+
+        # Set titles, labels, etc.
+        ax.set_title(f'Fourier Transform at {positions[i]}')
+        ax.set_xlabel('Frequency [Hz]')
+        ax.set_ylabel('Amplitude')
+        ax.legend()
+
+        # Increment the subplot index
+        index += 1
+
+        # Break if all subplots are filled
+        if index >= 6:
+            break
+
+    # Adjust layout to prevent overlap
+    plt.tight_layout()
     plt.show()
+
+    
 
