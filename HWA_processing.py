@@ -287,7 +287,7 @@ for angle in angles:
 
         #Compute the fourier transform
         #fluctuations_fft, freqs = fourier(fluctuations_array, 9.765625E-5)
-        fluctuations_fft, freqs = fourier_with_windowing(fluctuations_array, 9.765625E-5, 1000)
+        fluctuations_fft, freqs = fourier_with_windowing(fluctuations_array, 9.765625E-5, 2000)
 
         if angle == "00":
             fft_dict[angle][position].append(np.abs(fluctuations_fft))
@@ -312,33 +312,45 @@ if fourier_plot_00:
     index = 0
 
     # Iterate through your positions, plotting every fourth position as specified
-    for i in [7, 8, 9, 10, 11, 20]:
+    for i in [7, 8, 9, 10, 11, 12]:
         ax = axs[index]
         frequencies = freqs_dict["00"][positions[i]][0]
         amplitudes = fft_dict["00"][positions[i]][0]
 
         # Plot the Fourier Transform
-        ax.loglog(frequencies, amplitudes, label=f'Position {positions[i]}')
+        ax.loglog(frequencies, amplitudes, linewidth=1, label='$y_{pos}$=' + f'{positions[i]}cm')
 
         # Calculate a dynamic prominence threshold based on the standard deviation of amplitudes
-        prominence_threshold = np.std(amplitudes) * 0.5  # Modify the factor as needed to tune sensitivity
+        prominence_threshold = np.std(amplitudes) * 3  # Modify the factor as needed to tune sensitivity
 
         # Find peaks with dynamic prominence
         peaks, properties = find_peaks(amplitudes, prominence=prominence_threshold)
-
-        # Plotting the peaks
         peak_freqs = frequencies[peaks]
         peak_amps = amplitudes[peaks]
-        ax.scatter(peak_freqs, peak_amps, color='red', s=50, zorder=5, label='Detected Peaks')
+        valid_indices = (peak_freqs > 20)
+        peak_freqs = peak_freqs[valid_indices]
+        peak_amps = peak_amps[valid_indices]
 
-        # Annotate each peak with its frequency and prominence
-        for freq, amp, prom in zip(peak_freqs, peak_amps, properties['prominences']):
-            ax.annotate(f'{freq:.2f} Hz\nProm={prom:.2f}', (freq, amp), textcoords="offset points", xytext=(0, 10),
-                        ha='center')
+        ax.scatter(peak_freqs, peak_amps, color='red', s=25, zorder=5, label='peaks')
+        last_annotated_freq = None  # Track the height of the last annotation
+        offset = 2
+        for idx, (freq, amp) in enumerate(zip(peak_freqs, peak_amps)):
+            # Dynamic vertical offset
+            if last_annotated_freq and abs(last_annotated_freq - freq) < last_annotated_freq and offset != 10:
+                offset = 10  # Move text down if the previous annotation was close in amplitude
+            else:
+                offset = 2  # Default upward offset
+
+            last_annotated_freq = freq  # Update the last annotated height
+
+            ax.annotate(f'{freq:.1f} Hz', xy=(freq, amp), xytext=(0, offset),
+                        textcoords="offset points", ha='center', va='bottom')
+
         # Set titles, labels, etc.
-        ax.set_title(f'Fourier Transform at {positions[i]}')
-        ax.set_xlabel('Frequency [Hz]')
-        ax.set_ylabel('Amplitude')
+        ax.set_xlabel('f [Hz]')
+        ax.set_ylabel('PSD [$m^2/s^2/Hz$]')
+        ax.set_xlim([10, 5000])
+        ax.set_ylim([np.min(amplitudes), 5 * np.max(amplitudes)])
         ax.legend()
 
         # Increment the subplot index
@@ -365,35 +377,48 @@ if fourier_plot_05:
     index = 0
 
     # Iterate through your positions, plotting every fourth position as specified
-    for i in [6 , 7, 8, 9, 10, 20]:
+    for i in [5, 6, 7, 8, 9, 10]:
         ax = axs[index]
         frequencies = freqs_dict["05"][positions[i]][0]
         amplitudes = fft_dict["05"][positions[i]][0]
 
         # Plot the Fourier Transform
-        ax.loglog(frequencies, amplitudes, label=f'Position {positions[i]}')
+        ax.loglog(frequencies, amplitudes, linewidth=1, label='$y_{pos}$=' + f'{positions[i]}cm')
 
         # Calculate a dynamic prominence threshold based on the standard deviation of amplitudes
-        prominence_threshold = np.std(amplitudes) * 1  # Modify the factor as needed to tune sensitivity
+        prominence_threshold = np.std(amplitudes) * 3  # Modify the factor as needed to tune sensitivity
 
         # Find peaks with dynamic prominence
         peaks, properties = find_peaks(amplitudes, prominence=prominence_threshold)
-
-        # Plotting the peaks
         peak_freqs = frequencies[peaks]
         peak_amps = amplitudes[peaks]
-        ax.scatter(peak_freqs, peak_amps, color='red', s=50, zorder=5, label='Detected Peaks')
+        valid_indices = (peak_freqs > 20)
+        peak_freqs = peak_freqs[valid_indices]
+        peak_amps = peak_amps[valid_indices]
+        ax.scatter(peak_freqs, peak_amps, color='red', s=25, zorder=5, label='peaks')
+        last_annotated_freq = None  # Track the height of the last annotation
+        last_annotated_amp = 0
+        offset = 2
+        for idx, (freq, amp) in enumerate(zip(peak_freqs, peak_amps)):
+            # Dynamic vertical offset
+            if last_annotated_freq and 2*last_annotated_freq > freq and offset != 18:
+                offset = 10
+                if last_annotated_amp > amp:
+                    offset = 18  # Move text down if the previous annotation was close in amplitude
+            else:
+                offset = 2  # Default upward offset
 
-        # Annotate each peak with its frequency and prominence
-        for freq, amp, prom in zip(peak_freqs, peak_amps, properties['prominences']):
-            print(freq)
-            ax.annotate(f'{freq:.2f} Hz\nProm={prom:.2f}', (freq, amp), textcoords="offset points", xytext=(0, 10),
-                        ha='center')
+            if np.round(freq, 1) == 204.8 or np.round(freq, 1) == 276.5 or np.round(freq, 1) == 312.3 or amp == np.max(peak_amps):
+                ax.annotate(f'{freq:.1f} Hz', xy=(freq, amp), xytext=(0, offset),
+                        textcoords="offset points", ha='center', va='bottom')
+                last_annotated_freq = freq  # Update the last annotated height
+                last_annotated_amp = amp
 
         # Set titles, labels, etc.
-        ax.set_title(f'Fourier Transform at {positions[i]}')
-        ax.set_xlabel('Frequency [Hz]')
-        ax.set_ylabel('Amplitude')
+        ax.set_xlabel('f [Hz]')
+        ax.set_ylabel('PSD [$m^2/s^2/Hz$]')
+        ax.set_xlim([10, 5000])
+        ax.set_ylim([np.min(amplitudes), 5 * np.max(amplitudes)])
         ax.legend()
 
         # Increment the subplot index
@@ -420,17 +445,52 @@ if fourier_plot_15:
     index = 0
 
     # Iterate through your positions, plotting every fourth position as specified
-    for i in [6, 7, 8, 9, 10, 11, 12]:
+    for i in [4, 5, 6, 12, 13, 14]:
+    #for i in range(7,13,1):
         # Select the next subplot
         ax = axs[index]
+        frequencies = freqs_dict["15"][positions[i]][0]
+        amplitudes = fft_dict["15"][positions[i]][0]
 
-        # Plot the Fourier transform for this position
-        ax.loglog(freqs_dict["15"][positions[i]][0], fft_dict["15"][positions[i]][0], label=positions[i])
+        # Plot the Fourier Transform
+        ax.loglog(frequencies, amplitudes, linewidth=1, label='$y_{pos}$=' + f'{positions[i]}cm')
+
+        # Calculate a dynamic prominence threshold based on the standard deviation of amplitudes
+        prominence_threshold = np.std(amplitudes) * 2  # Modify the factor as needed to tune sensitivity
+
+        # Find peaks with dynamic prominence
+        peaks, properties = find_peaks(amplitudes, prominence=prominence_threshold)
+        peak_freqs = frequencies[peaks]
+        peak_amps = amplitudes[peaks]
+        valid_indices = (peak_freqs > 20)
+        peak_freqs = peak_freqs[valid_indices]
+        peak_amps = peak_amps[valid_indices]
+        # Annotate peaks with their frequencies
+        '''ax.scatter(peak_freqs, peak_amps, color='red', s=25, zorder=5, label='peaks')
+        for freq, amp in zip(peak_freqs, peak_amps):
+            ax.annotate(f'{freq:.001f} Hz', xy=(freq, amp), xytext=(0, 2),
+                        textcoords="offset points", ha='center', va='bottom')'''
+
+        ax.scatter(peak_freqs, peak_amps, color='red', s=25, zorder=5, label='peaks')
+        last_annotated_freq = None  # Track the height of the last annotation
+        offset = 2
+        for idx, (freq, amp) in enumerate(zip(peak_freqs, peak_amps)):
+            # Dynamic vertical offset
+            if last_annotated_freq and abs(last_annotated_freq - freq) < last_annotated_freq and offset != 10:
+                offset = 10  # Move text down if the previous annotation was close in amplitude
+            else:
+                offset = 2  # Default upward offset
+
+            last_annotated_freq = freq  # Update the last annotated height
+
+            ax.annotate(f'{freq:.1f} Hz', xy=(freq, amp), xytext=(0, offset),
+                        textcoords="offset points", ha='center', va='bottom')
 
         # Set titles, labels, etc.
-        ax.set_title(f'Fourier Transform at {positions[i]}')
-        ax.set_xlabel('Frequency [Hz]')
-        ax.set_ylabel('Amplitude')
+        ax.set_xlabel('f [Hz]')
+        ax.set_ylabel('PSD [$m^2/s^2/Hz$]')
+        ax.set_xlim([10, 5000])
+        ax.set_ylim([np.min(amplitudes), 5*np.max(amplitudes)])
         ax.legend()
 
         # Increment the subplot index
